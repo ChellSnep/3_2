@@ -19,11 +19,22 @@
       th {
         background-color: #f4f4f4;
       }
+      .wrap {
+        overflow-x: auto;
+      }
     </style>
   </head>
   <body>
     <h1>Stacje NOAA</h1>
     <div>
+      <select id="endpoint" aria-label="Endpoint">
+        <option value="stations">/stations</option>
+        <option value="datasets">/datasets</option>
+        <option value="datacategories">/datacategories</option>
+        <option value="datatypes">/datatypes</option>
+        <option value="locationcategories">/locationcategories</option>
+        <option value="locations">/locations</option>
+      </select>
       <input id="token" type="password" placeholder="Token API NOAA" autocomplete="off" aria-label="Token API NOAA">
       <button id="load">Pobierz stacje</button>
       <button id="more" class="secondary" disabled>Wczytaj kolejne 1000</button>
@@ -33,17 +44,13 @@
 
     <br>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Station ID</th>
-          <th>Name</th>
-          <th>Latitude</th>
-          <th>Longitude</th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
+    <div class="wrap">
+      <table>
+        <thead id="head"></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      </div>
+
 
     <script src="script.js"></script>
   </body>
