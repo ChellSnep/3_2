@@ -3,23 +3,25 @@ const fs = require("fs");
 const path = require("path");
 
 const PORT = 3000;
-const NOAA = "https://www.ncei.noaa.gov/cdo-web/api/v2/stations";
+const NOAA = "https://www.ncei.noaa.gov/cdo-web/api/v2/";
 const FILES = { "/": "index.html", "/index.html": "index.html", "/script.js": "script.js" };
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8" };
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
+  const m = url.pathname.match(/^\/api\/(\w+)$/);
 
-  if (url.pathname === "/api/stations") {
+  if (m) {
+    const target = NOAA + m[1] + url.search;
+    console.log("→", target);
     try {
-      const upstream = await fetch(NOAA + url.search, {
-        headers: { token: req.headers["token"] || "" }
-      });
+      const upstream = await fetch(target, { headers: { token: req.headers["token"] || "" } });
       res.writeHead(upstream.status, { "Content-Type": "application/json" });
       res.end(await upstream.text());
     } catch (err) {
+      console.error("Błąd połączenia z NOAA:", err.cause?.code || err.message);
       res.writeHead(502, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Nie udało się połączyć z NOAA: " + err.message }));
+      res.end(JSON.stringify({ error: "Serwer nie może połączyć się z NOAA (" + (err.cause?.code || err.message) + ")" }));
     }
     return;
   }

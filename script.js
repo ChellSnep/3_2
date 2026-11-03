@@ -1,11 +1,4 @@
-const BASE = "https://www.ncei.noaa.gov/cdo-web/api/v2/";
-const LIMIT = 1000;
-let offset = 1;
-let total = null;
-
-const FIELDS = { stations: ["id", "name", "latitude", "longitude"] };
-const HEADERS = { stations: ["Station ID", "Name", "Latitude", "Longitude"] };
-let columns = [];
+const API = "/api/data"; 
 
 const $ = id => document.getElementById(id);
 const statusEl = $("status");
@@ -15,21 +8,19 @@ function setStatus(msg, isError = false) {
   statusEl.className = isError ? "error" : "";
 }
 
-function buildHead(endpoint, firstItem) {
-  columns = FIELDS[endpoint] || Object.keys(firstItem);
-  const labels = HEADERS[endpoint] || columns;
-  const tr = document.createElement("tr");
-  labels.forEach(label => {
-    const th = document.createElement("th");
-    th.textContent = label;
-    tr.appendChild(th);
-  });
-  $("head").replaceChildren(tr);
-}
+function render(results) {
+  const columns = Object.keys(results[0]);
 
-function addRows(items) {
+  const headRow = document.createElement("tr");
+  columns.forEach(key => {
+    const th = document.createElement("th");
+    th.textContent = key;
+    headRow.appendChild(th);
+  });
+  $("head").replaceChildren(headRow);
+
   const frag = document.createDocumentFragment();
-  for (const item of items) {
+  for (const item of results) {
     const tr = document.createElement("tr");
     columns.forEach(key => {
       const td = document.createElement("td");
@@ -38,55 +29,45 @@ function addRows(items) {
     });
     frag.appendChild(tr);
   }
-  $("rows").appendChild(frag);
+  $("rows").replaceChildren(frag);
 }
 
-async function fetchPage() {
-  const token = $("token").value.trim();
-  if (!token) { setStatus("Wpisz token API.", true); return; }
-  const endpoint = $("endpoint").value;
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const params = new URLSearchParams();
+  ["datasetid", "locationid", "datatypeid", "startdate", "enddate", "limit"].forEach(name => {
+    const value = $(name).value.trim();
+    if (value) params.set(name, value);
+  });
 
   $("load").disabled = true;
-  $("more").disabled = true;
+  $("head").replaceChildren();
+  $("rows").replaceChildren();
   setStatus("Pobieranie danych…");
 
   try {
-    const res = await fetch(`${BASE}${endpoint}?limit=${LIMIT}&offset=${offset}`, {
-      headers: { token }
+    const res = await fetch(`${API}?${params}`, {
+      headers: { token: $("token").value.trim() }
     });
+    if (res.status === 502) {
+      throw new Error((await res.json()).error);
+    }
     if (!res.ok) {
-      throw new Error(res.status === 400 || res.status === 401 || res.status === 403
-        ? "Nieprawidłowy token API."
+      throw new Error(res.status === 400
+        ? "Błędne parametry zapytania lub token (zakres dat to maks. 1 rok)."
         : `Błąd serwera: ${res.status}`);
     }
     const data = await res.json();
     const results = data.results || [];
-    total = data.metadata?.resultset?.count ?? total;
+    if (!results.length) { setStatus("Brak wyników dla podanych parametrów."); return; }
 
-    if (offset === 1) {
-      if (!results.length) { setStatus("Brak wyników."); return; }
-      buildHead(endpoint, results[0]);
-    }
-    addRows(results);
-    offset += results.length;
-
-    const loaded = offset - 1;
-    setStatus(`Wczytano ${loaded}${total ? " z " + total : ""} rekordów.`);
-    $("more").disabled = !(results.length === LIMIT && (!total || loaded < total));
+    render(results);
+    const total = data.metadata?.resultset?.count;
+    setStatus(`Wczytano ${results.length}${total ? " z " + total : ""} rekordów.`);
   } catch (err) {
     setStatus(err.message || "Nie udało się pobrać danych.", true);
-    $("more").disabled = offset === 1;
   } finally {
     $("load").disabled = false;
   }
-}
-
-$("load").addEventListener("click", () => {
-  offset = 1;
-  total = null;
-  $("head").replaceChildren();
-  $("rows").replaceChildren();
-  fetchPage();
 });
-$("more").addEventListener("click", fetchPage);
-$("token").addEventListener("keydown", e => { if (e.key === "Enter") $("load").click(); });
