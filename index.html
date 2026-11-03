@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Ćwiczenie 3_2</title>
+
+    <style>
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 800px;
+      }
+      th, td {
+        border: 1px solid #ccc;
+        padding: 10px 14px;
+        text-align: left;
+      }
+      th {
+        background-color: #f4f4f4;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Stacje NOAA</h1>
+    <div>
+      <input id="token" type="password" placeholder="Token API NOAA" autocomplete="off" aria-label="Token API NOAA">
+      <button id="load">Pobierz stacje</button>
+      <button id="more" class="secondary" disabled>Wczytaj kolejne 1000</button>
+    </div>
+
+    <div id="status" role="status"></div>
+
+    <br>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Station ID</th>
+          <th>Name</th>
+          <th>Latitude</th>
+          <th>Longitude</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <script src="script.js"></script>
+  </body>
+</html>
